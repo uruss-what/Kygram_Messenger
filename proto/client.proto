@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package client;
+
+option go_package = "/proto/protopb;protopb";
+
+service ClientService {
+rpc Connect (ConnectRequest) returns (ConnectResponse);
+rpc GetChatHistory(GetChatHistoryRequest) returns (GetChatHistoryResponse);
+}
+
+message ConnectRequest {
+    string chat_id = 1;
+}
+
+message ConnectResponse {
+    string algorithm = 1; 
+    string mode = 2;      
+    string padding = 3; 
+    string prime = 4;    
+}
+
+message GetChatHistoryRequest {
+    string chat_id = 1;
+  }
+  
+  message MessageRecord {
+    string sender_id = 1;
+    string sender_name = 2;
+    bytes encrypted_message = 3;
+    string created_at = 4;
+  }
+  
+  message GetChatHistoryResponse {
+    repeated MessageRecord messages = 1;
+  }

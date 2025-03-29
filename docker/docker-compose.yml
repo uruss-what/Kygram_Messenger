@@ -1,0 +1,93 @@
+version: "3.8"
+
+services:
+  grpc-server:
+    image: golang:1.21
+    container_name: grpc-server
+    working_dir: /Kygram
+    volumes:
+      - ..:/Kygram  
+    ports:
+      - "2033:2033"
+      - "50051:50051"
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=2025
+      - DB_USER=KygramDev
+      - DB_PASSWORD=fhfdjffndk
+      - DB_NAME=Kygram
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    command: >
+      sh -c "go mod download && go run cmd/main.go"
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "8080:8080"  
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf 
+    depends_on:
+      - grpc-server
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres
+    container_name: CryptoMessenger
+    restart: always
+    environment:
+      POSTGRES_USER: KygramDev
+      POSTGRES_PASSWORD: fhfdjffndk
+      POSTGRES_DB: Kygram
+    ports:
+      - "2025:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../docker/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    ports:
+      - "5672:5672"  
+      - "15672:15672" 
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ../docker/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+    networks:
+      - app-network
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+    volumes:
+      - redis_data:/data
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+  redis_data:

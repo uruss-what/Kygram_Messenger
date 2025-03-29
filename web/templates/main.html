@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messenger</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(to right, #e0e0e0, #c1c1e0);
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            width: 70%;
+            display: flex;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            position: relative;
+        }
+        .chat-list {
+            width: 30%;
+            background: #6c5ce7;
+            color: white;
+            padding: 20px;
+        }
+        #chat-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            max-height: 300px;
+            overflow-y: auto; 
+        }
+        #chat-list li {
+            padding: 10px;
+            margin: 5px 0;
+            background: #5a4abf;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #chat-list li:hover {
+            background: #4b39b3;
+        }
+        .chat-window {
+            width: 70%;
+            padding: 20px;
+        }
+        .join-chat-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        #chat-name-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .join-chat-container button {
+            background: #6c5ce7;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+            margin-top: 9px;
+        }
+        .join-chat-container button:hover {
+            background: #4b39b3;
+        }
+
+        button {
+            background: #6c5ce7;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #4b39b3;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .logout-button {
+            position: absolute;
+            top: 10px;
+            right: 10px; 
+            background: #6c5ce7;
+        }
+        .logout-button:hover {
+            background: #4b39b3;
+        }
+
+        .participants-container {
+        position: relative;
+        width: 100%;
+    }
+
+    #participants {
+        width: 100%; 
+        padding-right: 10px; 
+    }
+
+    datalist option {
+        padding: 10px;
+        cursor: pointer;
+    }
+
+    datalist option:hover {
+        background-color: #f0f0f0;
+    }
+    button#submit-chat {
+    margin-top: 14px; 
+}
+/* Добавьте этот стиль для активного чата */
+    #chat-list li.active-chat {
+        background-color: #4b39b3;
+        border-left: 4px solid #fff;
+    }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="logout-button" onclick="logout()">Logout</button>
+        <div class="chat-list">
+            <h2>Your Chats</h2>
+            <ul id="chat-list"></ul>
+        </div>
+        <div class="chat-window">
+            <h2>Chat</h2>
+            <div>
+                <input type="text" id="chat-name" placeholder="Chat Name" style="width: 97%;">
+                <select id="encryption-algo">
+                    <option value="twofish">Twofish</option>
+                    <option value="rc5">RC5</option>
+                </select>
+                <select id="encryption-mode">
+                    <option value="ECB">ECB</option>
+                    <option value="CBC">CBC</option>
+                    <option value="CBC">PCBC</option>
+                    <option value="CFB">CFB</option>
+                    <option value="OFB">OFB</option>
+                    <option value="CTR">CTR</option>
+                    <option value="RandomDelta">RandomDelta</option>
+                </select>
+                <select id="padding-mode">
+                    <option value="Zeros">Zeros</option>
+                    <option value="ANSIX923">ANSI X.923</option>
+                    <option value="PKCS7">PKCS7</option>
+                    <option value="ISO10126">ISO 10126</option>
+                </select>
+
+                <div class="participants-container">
+                    <input type="text" id="participants" placeholder="Friend" list="users-list" style="width: 97%;">
+                    <datalist id="users-list">
+ 
+                    </datalist>
+                </div>
+                <button id="submit-chat" onclick="submitChat()">Create Chat</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('You are not authorized. Redirecting to login page...');
+            window.location.href = '/Kygram/auth'; 
+        }
+         document.addEventListener('DOMContentLoaded', function () {
+            fetch('/list-users')
+                .then(response => response.json())
+                .then(data => {
+                    const usersList = document.getElementById('users-list');
+                    data.users.forEach(user => {
+                        const option = document.createElement('option');
+                        option.value = user.username;
+                        usersList.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error fetching users:', error));
+        });
+
+        function DeleteChat() {
+            alert("Creating a chat...");
+        }
+
+
+        function submitChat() {
+    const participants = document.getElementById('participants').value;
+    if (!participants) {
+        alert('Please select at least one participant.');
+        return;
+    }
+    const chatName = document.getElementById('chat-name').value;
+    if (!chatName) {
+        alert('Please enter the Chat Name.');
+        return;
+    }
+
+    const algorithm = document.getElementById('encryption-algo').value;
+    const mode = document.getElementById('encryption-mode').value;
+    const padding = document.getElementById('padding-mode').value;
+    const creatorID = localStorage.getItem('user_id'); 
+
+    if (!creatorID) {
+        alert('Error: User ID not found. Please log in again.');
+        return;
+    }
+
+    const usersList = document.getElementById('users-list').options;
+    let userExists = false;
+    for (let i = 0; i < usersList.length; i++) {
+        if (usersList[i].value === participants) {
+            userExists = true;
+            break;
+        }
+    }
+
+    if (!userExists) {
+        alert('Error: The entered user does not exist.');
+        return;
+    }
+
+    const chatData = {
+        chat_id: chatName,
+        name: chatName,
+        algorithm: algorithm,
+        mode: mode,
+        padding: padding,
+        participants: [participants], 
+    };
+
+    fetch('/create-chat', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'X-User-ID': creatorID,
+    },
+    body: JSON.stringify(chatData)
+})
+.then(response => {
+    if (!response.ok) {
+        return response.text().then(text => {
+            throw new Error(text);
+        });
+    }
+    return response.json();
+})
+.then(data => {
+    if (data.chat_id) {
+        localStorage.setItem('current_chat_id', data.chat_id);
+         window.location.href = '/Kygram/chat';
+        //alert(`Chat created successfully with ID: ${data.chat_id}`);
+        //window.location.reload();
+    } else {
+        alert('Failed to create chat: ' + data.message);
+    }
+})
+.catch(error => {
+    console.error('Error creating chat:', error);
+    alert('Failed to create chat: ' + error.message);
+});
+
+
+}
+
+
+    function logout() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('You are not logged in.');
+            return;
+        }
+
+        fetch('/logout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify({ token: token })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user_id');
+                //alert('Logout successful');
+                window.location.href = '/Kygram/auth';
+            } else {
+                alert('Logout failed: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Logout failed:', error);
+            alert('Logout failed: ' + error.message);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+    fetch('/list-users')
+        .then(response => response.json())
+        .then(data => {
+            const usersList = document.getElementById('users-list');
+            usersList.innerHTML = ''; 
+
+            const uniqueUsers = [...new Set(data.users.map(user => user.username))];
+
+            uniqueUsers.forEach(username => {
+                const option = document.createElement('option');
+                option.value = username;
+                usersList.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Error fetching users:', error));
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    loadUserChats();
+});
+
+function loadUserChats() {
+    const userID = localStorage.getItem('user_id');
+    if (!userID) {
+        alert('User ID not found. Please log in again.');
+        return;
+    }
+
+    fetch('/list-user-chats', {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'X-User-ID': userID,
+        },
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => {
+                throw new Error(text);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            const chatList = document.getElementById('chat-list');
+            chatList.innerHTML = '';
+            const currentChatId = localStorage.getItem('current_chat_id');
+
+            data.chats.forEach(chat => {
+                const li = document.createElement('li');
+                li.textContent = chat.name;
+                li.dataset.chatId = chat.chat_id;
+
+                if (chat.chat_id === currentChatId) {
+                    li.classList.add('active-chat');
+                }
+
+                const deleteIcon = document.createElement('span');
+                deleteIcon.innerHTML = '✖';
+                deleteIcon.style.cursor = 'pointer';
+                deleteIcon.style.float = 'right';
+                deleteIcon.style.marginLeft = '10px';
+                deleteIcon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteChat(chat.chat_id);
+                });
+
+                li.appendChild(deleteIcon);
+
+                li.addEventListener('click', () => {
+                    localStorage.setItem('current_chat_id', chat.chat_id);
+                    window.location.href = '/Kygram/chat';
+                });
+                chatList.appendChild(li);
+            });
+        } else {
+            console.warn('No chats found for user.');
+           // alert('Failed to load chats: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading chats:', error);
+       // alert('Failed to load chats: ' + error.message);
+    });
+}
+
+async function deleteChat(chatId) {
+    if (!confirm('Are you sure you want to delete this chat?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/close-chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+            body: JSON.stringify({
+                chat_id: chatId,
+            }),
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            alert('Chat deleted successfully!');
+            loadUserChats();
+        } else {
+            alert('Error deleting chat: ' + (data.message || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Delete error:', error);
+        alert('Failed to delete chat');
+    }
+}
+</script>
+
+
+
+</body>
+</html>
