@@ -6,7 +6,7 @@
 методы набивки Zeros, ANSI X.923, PKCS7, ISO 10126. 
 
 Архитектура приложения построена на клиент-серверной модели, где серверная часть реализована с 
-использованием gRPC, PostgreSQL, Redis и RabbitMQ, развернутых в Docker. Сервер отвечает за 
+использованием gRPC и PostgreSQL, развернутым в Docker. Сервер отвечает за 
 обработку запросов, управление сеансовыми ключами и маршрутизацию зашифрованных 
 сообщений между клиентами. Клиентская часть представляет собой веб-приложение на HTML, 
 CSS и JavaScript, использующее WebSocket для потоковой передачи данных.
@@ -16,7 +16,7 @@ CSS и JavaScript, использующее WebSocket для потоковой 
 / To ensure the security of transmitted data, various block encryption modes are used, 
 including ECB, CBC, PCBC, CFB, OFB, CTR and Random Delta, as well as Zeros, ANSI X.923, PKCS7, ISO 10126 padding methods.
 
-/The application architecture is built on a client-server model, where the server part is implemented using gRPC, PostgreSQL, Redis and RabbitMQ deployed in Docker. 
+/The application architecture is built on a client-server model, where the server part is implemented using gRPC and PostgreSQL deployed in Docker. 
 The server is responsible for processing requests, managing session keys and routing encrypted messages between clients. 
 The client part is a web application in HTML, CSS and JavaScript, using WebSocket for streaming data.
 
